@@ -11,6 +11,7 @@ struct MainTabView: View {
     @State private var viewModel = TodoViewModel()
     @State private var settings = AppSettings()
     @State private var selectedTab: Tab = .home
+    @State private var tasksFilter: TaskFilter = .all
     
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -24,10 +25,17 @@ struct MainTabView: View {
                 
                 ZStack {
                     if selectedTab == .home {
-                        HomeView(viewModel: $viewModel, settings: settings)
+                        HomeView(
+                            viewModel: $viewModel, 
+                            settings: settings,
+                            onNavigateToTasks: { filter in
+                                tasksFilter = filter
+                                selectedTab = .tasks
+                            }
+                        )
                             .transition(.move(edge: .leading))
                     } else if selectedTab == .tasks {
-                        TasksListView(viewModel: $viewModel)
+                        TasksListView(viewModel: $viewModel, initialFilter: tasksFilter)
                             .transition(.move(edge: .trailing))
                     } else if selectedTab == .settings {
                         SettingsView(viewModel: $viewModel, settings: settings)

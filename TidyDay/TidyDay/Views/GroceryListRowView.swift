@@ -17,52 +17,134 @@ struct GroceryListRowView: View {
     @State private var isExpanded = false
     @State private var newItemText = ""
     @FocusState private var isInputFocused: Bool
-
+    @State private var dragOffset = CGSize.zero
+    @State private var isShowingActions = false
     
     var body: some View {
         VStack(spacing: 0) {
-            // Main grocery list header - Static
-            HStack(spacing: 12) {
-                Image(systemName: "cart.fill")
-                    .font(.system(size: 20))
-                    .foregroundColor(.green)
-                
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(todo.title)
-                        .font(.system(size: 17, weight: .medium))
-                        .foregroundColor(.primary)
-                        .strikethrough(todo.isCompleted)
+            // Main grocery list header with swipe actions
+            ZStack {
+                // Background action buttons
+                HStack {
+                    Spacer()
                     
-                    if let items = todo.groceryItems {
-                        let completedCount = items.filter { $0.isCompleted }.count
-                        Text("\(completedCount)/\(items.count) items")
-                            .font(.system(size: 14, weight: .regular))
+                    // Left side actions
+                    HStack(spacing: 16) {
+                        Button(action: {
+                            let impact = UIImpactFeedbackGenerator(style: .medium)
+                            impact.impactOccurred()
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                viewModel.toggleTodo(todo)
+                            }
+                        }) {
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(.system(size: 24))
+                                .foregroundColor(.green)
+                        }
+                        .buttonStyle(.plain)
+                        
+                        Button(action: onInfo) {
+                            Image(systemName: "info.circle.fill")
+                                .font(.system(size: 24))
+                                .foregroundColor(.blue)
+                        }
+                        .buttonStyle(.plain)
+                        
+                        Button(action: onEdit) {
+                            Image(systemName: "pencil.circle.fill")
+                                .font(.system(size: 24))
+                                .foregroundColor(.orange)
+                        }
+                        .buttonStyle(.plain)
+                        
+                        Button(action: onDelete) {
+                            Image(systemName: "trash.circle.fill")
+                                .font(.system(size: 24))
+                                .foregroundColor(.red)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .padding(.trailing, 16)
+                    .opacity(dragOffset.width < -50 ? 1 : 0)
+                }
+                
+                // Main content
+                HStack(spacing: 12) {
+                    Image(systemName: "cart.fill")
+                        .font(.system(size: 20))
+                        .foregroundColor(.green)
+                    
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(todo.title)
+                            .font(.system(size: 17, weight: .medium))
+                            .foregroundColor(.primary)
+                            .strikethrough(todo.isCompleted)
+                        
+                        if let items = todo.groceryItems {
+                            let completedCount = items.filter { $0.isCompleted }.count
+                            Text("\(completedCount)/\(items.count) items")
+                                .font(.system(size: 14, weight: .regular))
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    
+                    Spacer()
+                    
+                    Button(action: {
+                        let impact = UIImpactFeedbackGenerator(style: .light)
+                        impact.impactOccurred()
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            isExpanded.toggle()
+                        }
+                    }) {
+                        Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                            .font(.system(size: 14, weight: .semibold))
                             .foregroundColor(.secondary)
                     }
+                    .buttonStyle(.plain)
                 }
-                
-                Spacer()
-                
-                Button(action: {
-                    let impact = UIImpactFeedbackGenerator(style: .light)
-                    impact.impactOccurred()
-                    isExpanded.toggle()
-                }) {
-                    Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(.secondary)
+                .padding()
+                .background(
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .fill(.regularMaterial)
+                )
+                .offset(x: dragOffset.width)
+                .gesture(
+                    DragGesture()
+                        .onChanged { value in
+                            dragOffset = value.translation
+                        }
+                        .onEnded { value in
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                if value.translation.width < -100 {
+                                    // Keep showing actions
+                                    dragOffset = CGSize(width: -120, height: 0)
+                                    isShowingActions = true
+                                } else {
+                                    // Snap back
+                                    dragOffset = .zero
+                                    isShowingActions = false
+                                }
+                            }
+                        }
+                )
+                .onTapGesture {
+                    if isShowingActions {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                            dragOffset = .zero
+                            isShowingActions = false
+                        }
+                    } else {
+                        let impact = UIImpactFeedbackGenerator(style: .light)
+                        impact.impactOccurred()
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            isExpanded.toggle()
+                        }
+                    }
                 }
-                .buttonStyle(.plain)
-            }
-            .padding()
-            .contentShape(Rectangle())
-            .onTapGesture {
-                let impact = UIImpactFeedbackGenerator(style: .light)
-                impact.impactOccurred()
-                isExpanded.toggle()
             }
             
-            // Expanded grocery items - Simple dropdown
+            // Expanded grocery items
             if isExpanded {
                 VStack(spacing: 8) {
                     // Add new item input
@@ -166,7 +248,7 @@ struct GroceryListRowView: View {
                 .padding(.top, 8)
                 .padding(.bottom, 12)
                 .clipped()
-                .transition(.opacity.combined(with: .move(edge: .top)))
+                .transition(.opacity.combined(with: .slide))
             }
         }
         .background(

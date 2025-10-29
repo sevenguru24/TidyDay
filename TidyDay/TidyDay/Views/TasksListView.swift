@@ -19,9 +19,29 @@ struct TasksListView: View {
     @State private var showDatePicker = false
     @State private var showTimePicker = false
     @State private var showGroceryListSheet = false
+    @State private var filterOption: TaskFilter = .all
+    
+    init(viewModel: Binding<TodoViewModel>, initialFilter: TaskFilter = .all) {
+        self._viewModel = viewModel
+        self._filterOption = State(initialValue: initialFilter)
+    }
+    
+    var filteredTodos: [TodoItem] {
+        switch filterOption {
+        case .all:
+            return viewModel.todos.filter { !$0.isArchived }
+        case .completed:
+            return viewModel.todos.filter { $0.isCompleted && !$0.isArchived }
+        case .pending:
+            return viewModel.todos.filter { !$0.isCompleted && !$0.isArchived }
+        }
+    }
     
     var body: some View {
         VStack(spacing: 0) {
+            // Filter tabs
+            filterTabView
+            
             // Plus Button and Text Box - Inline
             HStack(alignment: .top, spacing: 12) {
                 Menu {
@@ -42,9 +62,9 @@ struct TasksListView: View {
             .padding(.horizontal)
             .padding(.vertical)
             
-            if !viewModel.todos.isEmpty {
+            if !filteredTodos.isEmpty {
                 List {
-                    ForEach(viewModel.todos) { todo in
+                    ForEach(filteredTodos) { todo in
                         if todo.isGroceryList {
                             GroceryListRowView(
                                 todo: todo,
@@ -224,6 +244,42 @@ struct TasksListView: View {
         .sheet(isPresented: $showGroceryListSheet) {
             GroceryListSheet(viewModel: $viewModel)
         }
+    }
+    
+    private var filterTabView: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 12) {
+                ForEach(TaskFilter.allCases, id: \.self) { filter in
+                    Button(action: {
+                        let impact = UIImpactFeedbackGenerator(style: .light)
+                        impact.impactOccurred()
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                            filterOption = filter
+                        }
+                    }) {
+                        Text(filter.rawValue)
+                            .font(.system(size: 15, weight: .medium))
+                            .foregroundColor(filterOption == filter ? .white : .primary)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 8)
+                            .background {
+                                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                                    .fill(filterOption == filter ? Color.blue : Color.clear)
+                                    .overlay {
+                                        RoundedRectangle(cornerRadius: 20, style: .continuous)
+                                            .strokeBorder(
+                                                filterOption == filter ? Color.clear : Color.secondary.opacity(0.3),
+                                                lineWidth: 1
+                                            )
+                                    }
+                            }
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal)
+        }
+        .padding(.vertical, 8)
     }
     
     private var todosSummary: String {

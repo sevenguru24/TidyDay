@@ -69,9 +69,30 @@ class TodoViewModel {
         }
     }
     
+    func toggleTodo(_ todo: TodoItem) {
+        if let index = todos.firstIndex(where: { $0.id == todo.id }) {
+            todos[index].isCompleted.toggle()
+            saveTodos()
+        }
+    }
+    
     func toggleComplete(_ todo: TodoItem) {
         if let index = todos.firstIndex(where: { $0.id == todo.id }) {
             todos[index].isCompleted.toggle()
+            saveTodos()
+        }
+    }
+    
+    func archiveTodo(_ todo: TodoItem) {
+        if let index = todos.firstIndex(where: { $0.id == todo.id }) {
+            todos[index].isArchived = true
+            saveTodos()
+        }
+    }
+    
+    func unarchiveTodo(_ todo: TodoItem) {
+        if let index = todos.firstIndex(where: { $0.id == todo.id }) {
+            todos[index].isArchived = false
             saveTodos()
         }
     }
@@ -99,8 +120,9 @@ class TodoViewModel {
         }
         
         // Clear all existing todos for fresh start
-        todos = []
-        saveTodos()
+        // Commented out to preserve existing todos
+        // todos = []
+        // saveTodos()
     }
 }
 

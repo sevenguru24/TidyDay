@@ -10,6 +10,13 @@ import SwiftUI
 struct HomeView: View {
     @Binding var viewModel: TodoViewModel
     let settings: AppSettings
+    let onNavigateToTasks: (TaskFilter) -> Void
+    
+    init(viewModel: Binding<TodoViewModel>, settings: AppSettings, onNavigateToTasks: @escaping (TaskFilter) -> Void = { _ in }) {
+        self._viewModel = viewModel
+        self.settings = settings
+        self.onNavigateToTasks = onNavigateToTasks
+    }
     
     var body: some View {
         ScrollView {
@@ -93,23 +100,26 @@ struct HomeView: View {
         HStack(spacing: 12) {
             StatCard(
                 title: "Total",
-                value: "\(viewModel.todos.count)",
+                value: "\(viewModel.todos.filter { !$0.isArchived }.count)",
                 color: .blue,
-                icon: "list.bullet"
+                icon: "list.bullet",
+                onTap: { onNavigateToTasks(.all) }
             )
             
             StatCard(
                 title: "Completed",
                 value: "\(completedCount)",
                 color: .green,
-                icon: "checkmark.circle.fill"
+                icon: "checkmark.circle.fill",
+                onTap: { onNavigateToTasks(.completed) }
             )
             
             StatCard(
                 title: "Pending",
                 value: "\(pendingCount)",
                 color: .orange,
-                icon: "clock.fill"
+                icon: "clock.fill",
+                onTap: { onNavigateToTasks(.pending) }
             )
         }
         .padding(.horizontal, 8)
@@ -124,22 +134,22 @@ struct HomeView: View {
                 
                 Spacer()
                 
-                if viewModel.todos.count > 3 {
-                    Text("\(viewModel.todos.count) total")
+                if viewModel.todos.filter({ !$0.isArchived }).count > 3 {
+                    Text("\(viewModel.todos.filter({ !$0.isArchived }).count) total")
                         .font(.system(size: 15, weight: .medium))
                         .foregroundColor(.secondary)
                 }
             }
             .padding(.horizontal, 8)
             
-            if viewModel.todos.isEmpty {
+            if viewModel.todos.filter({ !$0.isArchived }).isEmpty {
                 EmptyRecentView()
             } else {
                 VStack(spacing: 0) {
-                    ForEach(Array(viewModel.todos.prefix(5))) { todo in
+                    ForEach(Array(viewModel.todos.filter({ !$0.isArchived }).prefix(5))) { todo in
                         RecentTaskRow(todo: todo)
                         
-                        if todo.id != viewModel.todos.prefix(5).last?.id {
+                        if todo.id != viewModel.todos.filter({ !$0.isArchived }).prefix(5).last?.id {
                             Divider()
                                 .padding(.leading, 56)
                         }
@@ -226,28 +236,31 @@ struct HomeView: View {
     }
     
     private var completedCount: Int {
-        viewModel.todos.filter { $0.isCompleted }.count
+        viewModel.todos.filter { $0.isCompleted && !$0.isArchived }.count
     }
     
     private var pendingCount: Int {
-        viewModel.todos.filter { !$0.isCompleted }.count
+        viewModel.todos.filter { !$0.isCompleted && !$0.isArchived }.count
     }
     
     private var completionRate: String {
-        guard !viewModel.todos.isEmpty else { return "0%" }
-        let rate = (Double(completedCount) / Double(viewModel.todos.count)) * 100
+        let activeTodos = viewModel.todos.filter { !$0.isArchived }
+        guard !activeTodos.isEmpty else { return "0%" }
+        let rate = (Double(completedCount) / Double(activeTodos.count)) * 100
         return String(format: "%.0f%%", rate)
     }
     
     private var tasksCreatedToday: Int {
         let today = Calendar.current.startOfDay(for: Date())
-        return viewModel.todos.filter { Calendar.current.isDate($0.createdAt, inSameDayAs: today) }.count
+        return viewModel.todos.filter { 
+            !$0.isArchived && Calendar.current.isDate($0.createdAt, inSameDayAs: today) 
+        }.count
     }
     
     private var completedToday: Int {
         let today = Calendar.current.startOfDay(for: Date())
         return viewModel.todos.filter {
-            $0.isCompleted && Calendar.current.isDate($0.createdAt, inSameDayAs: today)
+            $0.isCompleted && !$0.isArchived && Calendar.current.isDate($0.createdAt, inSameDayAs: today)
         }.count
     }
 }
@@ -257,35 +270,51 @@ struct StatCard: View {
     let value: String
     let color: Color
     let icon: String
+    let onTap: (() -> Void)?
+    
+    init(title: String, value: String, color: Color, icon: String, onTap: (() -> Void)? = nil) {
+        self.title = title
+        self.value = value
+        self.color = color
+        self.icon = icon
+        self.onTap = onTap
+    }
     
     var body: some View {
-        VStack(spacing: 8) {
-            Image(systemName: icon)
-                .font(.system(size: 24))
-                .foregroundColor(color)
-            
-            Text(value)
-                .font(.system(size: 28, weight: .bold, design: .rounded))
-                .foregroundColor(.primary)
-            
-            Text(title)
-                .font(.system(size: 13, weight: .medium))
-                .foregroundColor(.secondary)
+        Button(action: {
+            let impact = UIImpactFeedbackGenerator(style: .light)
+            impact.impactOccurred()
+            onTap?()
+        }) {
+            VStack(spacing: 8) {
+                Image(systemName: icon)
+                    .font(.system(size: 24))
+                    .foregroundColor(color)
+                
+                Text(value)
+                    .font(.system(size: 28, weight: .bold, design: .rounded))
+                    .foregroundColor(.primary)
+                
+                Text(title)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundColor(.secondary)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 20)
+            .background {
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(.regularMaterial)
+                    .shadow(color: Color.black.opacity(0.15), radius: 10, x: 0, y: 4)
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .strokeBorder(
+                                Color.primary.opacity(0.1),
+                                lineWidth: 0.5
+                            )
+                    }
+            }
         }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 20)
-        .background {
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(.regularMaterial)
-                .shadow(color: Color.black.opacity(0.15), radius: 10, x: 0, y: 4)
-                .overlay {
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .strokeBorder(
-                            Color.primary.opacity(0.1),
-                            lineWidth: 0.5
-                        )
-                }
-        }
+        .buttonStyle(.plain)
     }
 }
 

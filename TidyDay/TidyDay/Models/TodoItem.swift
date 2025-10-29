@@ -15,11 +15,12 @@ struct TodoItem: Identifiable, Codable {
     var dueDate: Date?
     var dueTime: Date?
     var groceryItems: [GroceryItem]?
+    var isArchived: Bool
     var isGroceryList: Bool {
         groceryItems != nil
     }
     
-    init(id: UUID = UUID(), title: String, isCompleted: Bool = false, createdAt: Date = Date(), dueDate: Date? = nil, dueTime: Date? = nil, groceryItems: [GroceryItem]? = nil) {
+    init(id: UUID = UUID(), title: String, isCompleted: Bool = false, createdAt: Date = Date(), dueDate: Date? = nil, dueTime: Date? = nil, groceryItems: [GroceryItem]? = nil, isArchived: Bool = false) {
         self.id = id
         self.title = title
         self.isCompleted = isCompleted
@@ -27,6 +28,7 @@ struct TodoItem: Identifiable, Codable {
         self.dueDate = dueDate
         self.dueTime = dueTime
         self.groceryItems = groceryItems
+        self.isArchived = isArchived
     }
 }
 
