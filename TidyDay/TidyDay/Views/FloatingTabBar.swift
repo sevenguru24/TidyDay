@@ -26,7 +26,6 @@ enum Tab: String, CaseIterable {
 
 struct FloatingTabBar: View {
     @Binding var selectedTab: Tab
-    let settings: AppSettings
     @Namespace private var animation
     @State private var tabHoverStates: [Tab: Bool] = [:]
     
@@ -65,58 +64,37 @@ struct FloatingTabBar: View {
         .padding(.vertical, 8)
         .background {
             ZStack {
-                if settings.useLiquidGlass {
-                    Capsule()
-                        .liquidGlassThinEffect(true)
-                        .overlay {
-                            Capsule()
-                                .strokeBorder(
-                                    LinearGradient(
-                                        colors: [
-                                            Color.white.opacity(0.4),
-                                            Color.white.opacity(0.1)
-                                        ],
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
-                                    ),
-                                    lineWidth: 1.5
+                Capsule()
+                    .fill(.ultraThinMaterial)
+                    .overlay {
+                        Capsule()
+                            .fill(
+                                LinearGradient(
+                                    colors: [
+                                        Color.white.opacity(0.2),
+                                        Color.white.opacity(0.05)
+                                    ],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
                                 )
-                        }
-                        .shadow(color: Color.black.opacity(0.15), radius: 25, x: 0, y: 15)
-                        .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
-                } else {
-                    Capsule()
-                        .fill(.ultraThinMaterial)
-                        .overlay {
-                            Capsule()
-                                .fill(
-                                    LinearGradient(
-                                        colors: [
-                                            Color.white.opacity(0.2),
-                                            Color.white.opacity(0.05)
-                                        ],
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
-                                    )
-                                )
-                        }
-                        .overlay {
-                            Capsule()
-                                .strokeBorder(
-                                    LinearGradient(
-                                        colors: [
-                                            Color.white.opacity(0.4),
-                                            Color.white.opacity(0.1)
-                                        ],
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
-                                    ),
-                                    lineWidth: 1.5
-                                )
-                        }
-                        .shadow(color: Color.black.opacity(0.15), radius: 25, x: 0, y: 15)
-                        .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
-                }
+                            )
+                    }
+                    .overlay {
+                        Capsule()
+                            .strokeBorder(
+                                LinearGradient(
+                                    colors: [
+                                        Color.white.opacity(0.4),
+                                        Color.white.opacity(0.1)
+                                    ],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                lineWidth: 1.5
+                            )
+                    }
+                    .shadow(color: Color.black.opacity(0.15), radius: 25, x: 0, y: 15)
+                    .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
             }
         }
         .padding(.horizontal, 80)

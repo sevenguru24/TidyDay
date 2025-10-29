@@ -11,12 +11,15 @@ struct EditTodoSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Binding var todo: TodoItem
     @State private var editedTitle: String
+    @State private var editingGroceryItems: [GroceryItem]
+    @State private var newGroceryItemName = ""
     let onSave: () -> Void
     let onDelete: () -> Void
     
     init(todo: Binding<TodoItem>, onSave: @escaping () -> Void, onDelete: @escaping () -> Void) {
         self._todo = todo
         self._editedTitle = State(initialValue: todo.wrappedValue.title)
+        self._editingGroceryItems = State(initialValue: todo.wrappedValue.groceryItems ?? [])
         self.onSave = onSave
         self.onDelete = onDelete
     }
@@ -30,6 +33,43 @@ struct EditTodoSheet: View {
                         .lineLimit(3...6)
                 } header: {
                     Text("Details")
+                }
+                
+                if todo.isGroceryList {
+                    Section {
+                        ForEach($editingGroceryItems) { $item in
+                            HStack {
+                                TextField("Item name", text: $item.name)
+                                    .font(.system(size: 15))
+                                
+                                Button(action: {
+                                    editingGroceryItems.removeAll { $0.id == item.id }
+                                }) {
+                                    Image(systemName: "minus.circle.fill")
+                                        .foregroundColor(.red)
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                        
+                        HStack {
+                            TextField("Add item", text: $newGroceryItemName)
+                                .font(.system(size: 15))
+                                .onSubmit {
+                                    addGroceryItem()
+                                }
+                            
+                            if !newGroceryItemName.isEmpty {
+                                Button(action: addGroceryItem) {
+                                    Image(systemName: "plus.circle.fill")
+                                        .foregroundColor(.blue)
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                    } header: {
+                        Text("Grocery Items")
+                    }
                 }
                 
                 Section {
@@ -88,6 +128,9 @@ struct EditTodoSheet: View {
                     Button("Done") {
                         if !editedTitle.trimmingCharacters(in: .whitespaces).isEmpty {
                             todo.title = editedTitle
+                            if todo.isGroceryList {
+                                todo.groceryItems = editingGroceryItems
+                            }
                         }
                         let impact = UIImpactFeedbackGenerator(style: .light)
                         impact.impactOccurred()
@@ -98,5 +141,12 @@ struct EditTodoSheet: View {
                 }
             }
         }
+    }
+    
+    private func addGroceryItem() {
+        guard !newGroceryItemName.trimmingCharacters(in: .whitespaces).isEmpty else { return }
+        let newItem = GroceryItem(name: newGroceryItemName)
+        editingGroceryItems.append(newItem)
+        newGroceryItemName = ""
     }
 }

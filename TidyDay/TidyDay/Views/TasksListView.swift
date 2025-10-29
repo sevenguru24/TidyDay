@@ -9,7 +9,6 @@ import SwiftUI
 
 struct TasksListView: View {
     @Binding var viewModel: TodoViewModel
-    let settings: AppSettings
     @State private var newTodoText = ""
     @FocusState private var isInputFocused: Bool
     @State private var editingTodo: TodoItem?
@@ -19,38 +18,211 @@ struct TasksListView: View {
     @State private var selectedDueTime: Date?
     @State private var showDatePicker = false
     @State private var showTimePicker = false
+    @State private var showGroceryListSheet = false
     
     var body: some View {
-        ScrollView {
-            VStack(spacing: 12) {
-                inputCardView
+        VStack(spacing: 0) {
+            // Plus Button and Text Box - Inline
+            HStack(alignment: .top, spacing: 12) {
+                Menu {
+                    Button(action: {
+                        showGroceryListSheet = true
+                    }) {
+                        Label("Grocery List", systemImage: "cart.fill")
+                    }
+                } label: {
+                    Image(systemName: "plus.circle.fill")
+                        .font(.system(size: 32))
+                        .foregroundColor(.blue)
+                }
+                .padding(.top, 12)
                 
-                if !viewModel.todos.isEmpty {
-                    todosListView
-                } else {
+                inputCardView
+            }
+            .padding(.horizontal)
+            .padding(.vertical)
+            
+            if !viewModel.todos.isEmpty {
+                List {
+                    ForEach(viewModel.todos) { todo in
+                        if todo.isGroceryList {
+                            GroceryListRowView(
+                                todo: todo,
+                                viewModel: $viewModel,
+                                onEdit: { editingTodo = todo },
+                                onInfo: { showingInfo = todo },
+                                onDelete: {
+                                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                        viewModel.deleteTodo(todo)
+                                    }
+                                }
+                            )
+                            .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+                            .listRowSeparator(.hidden)
+                            .listRowBackground(Color.clear)
+                            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                Button(role: .destructive) {
+                                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                        viewModel.deleteTodo(todo)
+                                    }
+                                } label: {
+                                    Label("Delete", systemImage: "trash.fill")
+                                }
+                                
+                                Button {
+                                    showingInfo = todo
+                                } label: {
+                                    Label("Info", systemImage: "info.circle.fill")
+                                }
+                                .tint(.blue)
+                                
+                                Button {
+                                    editingTodo = todo
+                                } label: {
+                                    Label("Edit", systemImage: "pencil")
+                                }
+                                .tint(.orange)
+                            }
+                            .swipeActions(edge: .leading, allowsFullSwipe: false) {
+                                Button {
+                                    let impact = UIImpactFeedbackGenerator(style: .medium)
+                                    impact.impactOccurred()
+                                    
+                                    withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                                        viewModel.toggleComplete(todo)
+                                    }
+                                } label: {
+                                    Label("Complete", systemImage: "checkmark.circle.fill")
+                                }
+                                .tint(.green)
+                            }
+                            .contextMenu {
+                                Button {
+                                    editingTodo = todo
+                                } label: {
+                                    Label("Edit", systemImage: "pencil")
+                                }
+                                
+                                Button {
+                                    showingInfo = todo
+                                } label: {
+                                    Label("Info", systemImage: "info.circle")
+                                }
+                                
+                                Button(role: .destructive) {
+                                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                        viewModel.deleteTodo(todo)
+                                    }
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
+                            }
+                        } else {
+                            TodoRowView(todo: todo) {
+                                viewModel.toggleComplete(todo)
+                            }
+                            .background {
+                                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                    .fill(.regularMaterial)
+                                    .shadow(color: Color.black.opacity(0.1), radius: 8, x: 0, y: 2)
+                                    .overlay {
+                                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                            .strokeBorder(
+                                                Color.primary.opacity(0.08),
+                                                lineWidth: 0.5
+                                            )
+                                    }
+                            }
+                            .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+                            .listRowSeparator(.hidden)
+                            .listRowBackground(Color.clear)
+                            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                Button(role: .destructive) {
+                                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                        viewModel.deleteTodo(todo)
+                                    }
+                                } label: {
+                                    Label("Delete", systemImage: "trash.fill")
+                                }
+                                
+                                Button {
+                                    showingInfo = todo
+                                } label: {
+                                    Label("Info", systemImage: "info.circle.fill")
+                                }
+                                .tint(.blue)
+                                
+                                Button {
+                                    editingTodo = todo
+                                } label: {
+                                    Label("Edit", systemImage: "pencil")
+                                }
+                                .tint(.orange)
+                            }
+                            .contextMenu {
+                                Button {
+                                    editingTodo = todo
+                                } label: {
+                                    Label("Edit", systemImage: "pencil")
+                                }
+                                
+                                Button {
+                                    showingInfo = todo
+                                } label: {
+                                    Label("Info", systemImage: "info.circle")
+                                }
+                                
+                                Button(role: .destructive) {
+                                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                        viewModel.deleteTodo(todo)
+                                    }
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
+                            }
+                        }
+                    }
+                    .onDelete { indexSet in
+                        indexSet.forEach { index in
+                            let todo = viewModel.todos[index]
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                viewModel.deleteTodo(todo)
+                            }
+                        }
+                    }
+                }
+                .listStyle(.plain)
+                .scrollContentBackground(.hidden)
+            } else {
+                ScrollView {
                     emptyStateView
                 }
             }
-            .padding()
-            .padding(.bottom, 80)
         }
         .sheet(item: $editingTodo) { todo in
             if let index = viewModel.todos.firstIndex(where: { $0.id == todo.id }) {
-                EditTodoSheet(
-                    todo: $viewModel.todos[index],
-                    onSave: {
-                        viewModel.saveTodos()
-                    },
-                    onDelete: {
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                            viewModel.deleteTodo(todo)
+                if todo.isGroceryList {
+                    GroceryListSheet(viewModel: $viewModel, editingTodo: todo)
+                } else {
+                    EditTodoSheet(
+                        todo: $viewModel.todos[index],
+                        onSave: {
+                            viewModel.saveTodos()
+                        },
+                        onDelete: {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                viewModel.deleteTodo(todo)
+                            }
                         }
-                    }
-                )
+                    )
+                }
             }
         }
         .sheet(item: $showingInfo) { todo in
             TodoInfoSheet(todo: todo)
+        }
+        .sheet(isPresented: $showGroceryListSheet) {
+            GroceryListSheet(viewModel: $viewModel)
         }
     }
     
@@ -67,44 +239,36 @@ struct TasksListView: View {
     
     private var inputCardView: some View {
         VStack(spacing: 12) {
-            LiquidGlassCard {
-                HStack(spacing: 12) {
-                    Image(systemName: "plus.circle.fill")
-                        .font(.system(size: 24))
-                        .foregroundColor(.blue)
-                    
-                    TextField("Add a new task...", text: $newTodoText)
-                        .font(.system(size: 17, weight: .regular))
-                        .foregroundColor(.primary)
-                        .focused($isInputFocused)
-                        .submitLabel(.done)
-                        .onSubmit {
-                            addTodo()
-                        }
-                        .onChange(of: isInputFocused) { oldValue, newValue in
-                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                                if newValue && !newTodoText.isEmpty {
-                                    showDateTimePickers = true
-                                }
-                            }
-                        }
-                    
-                    if !newTodoText.isEmpty {
-                        Button(action: addTodo) {
-                            Image(systemName: "arrow.up.circle.fill")
-                                .font(.system(size: 24))
-                                .foregroundColor(.blue)
-                        }
-                        .buttonStyle(.plain)
-                        .transition(.scale.combined(with: .opacity))
+            HStack(spacing: 12) {
+                TextField("Add a new task...", text: $newTodoText)
+                    .font(.system(size: 17, weight: .regular))
+                    .foregroundColor(.primary)
+                    .focused($isInputFocused)
+                    .submitLabel(.done)
+                    .onSubmit {
+                        addTodo()
                     }
+                    .onChange(of: isInputFocused) { oldValue, newValue in
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                            showDateTimePickers = newValue
+                        }
+                    }
+                
+                if !newTodoText.isEmpty {
+                    Button(action: addTodo) {
+                        Image(systemName: "arrow.up.circle.fill")
+                            .font(.system(size: 24))
+                            .foregroundColor(.blue)
+                    }
+                    .buttonStyle(.plain)
+                    .transition(.scale.combined(with: .opacity))
                 }
             }
-            .onTapGesture {
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                    isInputFocused = true
-                    showDateTimePickers = true
-                }
+            .padding()
+            .background {
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(.regularMaterial)
+                    .shadow(color: Color.black.opacity(0.1), radius: 8, x: 0, y: 2)
             }
             
             if showDateTimePickers {
@@ -221,7 +385,7 @@ struct TasksListView: View {
                 .padding()
                 .background {
                     RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .liquidGlassEffect(settings.useLiquidGlass)
+                        .fill(.regularMaterial)
                         .shadow(color: Color.black.opacity(0.1), radius: 8, x: 0, y: 2)
                 }
                 .transition(.scale.combined(with: .opacity))
@@ -232,90 +396,7 @@ struct TasksListView: View {
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: showTimePicker)
     }
     
-    private var todosListView: some View {
-        List {
-            ForEach(viewModel.todos) { todo in
-                TodoRowView(todo: todo) {
-                    viewModel.toggleComplete(todo)
-                }
-                .listRowInsets(EdgeInsets(top: 6, leading: 12, bottom: 6, trailing: 12))
-                .listRowBackground(Color.clear)
-                .listRowSeparator(.hidden)
-                .background {
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .liquidGlassEffect(settings.useLiquidGlass)
-                        .shadow(color: Color.black.opacity(0.1), radius: 8, x: 0, y: 2)
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                .strokeBorder(
-                                    Color.primary.opacity(0.08),
-                                    lineWidth: 0.5
-                                )
-                        }
-                }
-                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                .contextMenu {
-                    Button {
-                        editingTodo = todo
-                    } label: {
-                        Label("Edit", systemImage: "pencil")
-                    }
-                    
-                    Button {
-                        showingInfo = todo
-                    } label: {
-                        Label("Info", systemImage: "info.circle")
-                    }
-                    
-                    Divider()
-                    
-                    Button(role: .destructive) {
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                            viewModel.deleteTodo(todo)
-                        }
-                    } label: {
-                        Label("Delete", systemImage: "trash")
-                    }
-                }
-                .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                    Button(role: .destructive) {
-                        let impact = UIImpactFeedbackGenerator(style: .medium)
-                        impact.impactOccurred()
-                        
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                            viewModel.deleteTodo(todo)
-                        }
-                    } label: {
-                        Label("Delete", systemImage: "trash.fill")
-                    }
-                    .tint(.red)
-                }
-                .swipeActions(edge: .leading, allowsFullSwipe: false) {
-                    Button {
-                        let impact = UIImpactFeedbackGenerator(style: .light)
-                        impact.impactOccurred()
-                        showingInfo = todo
-                    } label: {
-                        Label("Info", systemImage: "info.circle.fill")
-                    }
-                    .tint(.blue)
-                    
-                    Button {
-                        let impact = UIImpactFeedbackGenerator(style: .light)
-                        impact.impactOccurred()
-                        editingTodo = todo
-                    } label: {
-                        Label("Edit", systemImage: "pencil")
-                    }
-                    .tint(.orange)
-                }
-            }
-        }
-        .listStyle(.plain)
-        .scrollContentBackground(.hidden)
-        .frame(height: CGFloat(viewModel.todos.count * 70))
-        .padding(.horizontal, 12)
-    }
+
     
     private var emptyStateView: some View {
         VStack(spacing: 16) {

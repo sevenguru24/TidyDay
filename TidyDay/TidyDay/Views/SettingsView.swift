@@ -10,7 +10,6 @@ import SwiftUI
 struct SettingsView: View {
     @Binding var viewModel: TodoViewModel
     @State var settings: AppSettings
-    @State private var showingAppearanceSettings = false
     
     var body: some View {
         ScrollView {
@@ -72,18 +71,6 @@ struct SettingsView: View {
                     color: .orange,
                     showChevron: true
                 ) {}
-                
-                Divider()
-                    .padding(.leading, 56)
-                
-                SettingsRow(
-                    icon: "moon.fill",
-                    title: "Appearance",
-                    color: .purple,
-                    showChevron: true
-                ) {
-                    showingAppearanceSettings = true
-                }
                 
                 Divider()
                     .padding(.leading, 56)
@@ -207,9 +194,6 @@ struct SettingsView: View {
                     }
             }
             .padding(.horizontal, 8)
-        }
-        .sheet(isPresented: $showingAppearanceSettings) {
-            AppearanceSettingsView(settings: settings)
         }
     }
 }

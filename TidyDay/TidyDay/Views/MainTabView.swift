@@ -27,7 +27,7 @@ struct MainTabView: View {
                         HomeView(viewModel: $viewModel, settings: settings)
                             .transition(.move(edge: .leading))
                     } else if selectedTab == .tasks {
-                        TasksListView(viewModel: $viewModel, settings: settings)
+                        TasksListView(viewModel: $viewModel)
                             .transition(.move(edge: .trailing))
                     } else if selectedTab == .settings {
                         SettingsView(viewModel: $viewModel, settings: settings)
@@ -37,7 +37,7 @@ struct MainTabView: View {
                 .animation(.easeInOut(duration: 0.25), value: selectedTab)
             }
             
-            FloatingTabBar(selectedTab: $selectedTab, settings: settings)
+            FloatingTabBar(selectedTab: $selectedTab)
         }
     }
     

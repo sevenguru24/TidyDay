@@ -25,6 +25,50 @@ class TodoViewModel {
         saveTodos()
     }
     
+    func addTodoWithGroceryList(title: String, groceryItems: [GroceryItem]) {
+        guard !title.trimmingCharacters(in: .whitespaces).isEmpty else { return }
+        let newTodo = TodoItem(title: title, groceryItems: groceryItems)
+        todos.insert(newTodo, at: 0)
+        saveTodos()
+    }
+    
+    func updateGroceryList(todo: TodoItem, title: String, groceryItems: [GroceryItem]) {
+        if let index = todos.firstIndex(where: { $0.id == todo.id }) {
+            todos[index].title = title
+            todos[index].groceryItems = groceryItems
+            saveTodos()
+        }
+    }
+    
+    func addGroceryItem(_ todo: TodoItem, itemName: String) {
+        if let todoIndex = todos.firstIndex(where: { $0.id == todo.id }),
+           var items = todos[todoIndex].groceryItems {
+            let newItem = GroceryItem(name: itemName)
+            items.append(newItem)
+            todos[todoIndex].groceryItems = items
+            saveTodos()
+        }
+    }
+    
+    func toggleGroceryItem(_ todo: TodoItem, itemId: UUID) {
+        if let todoIndex = todos.firstIndex(where: { $0.id == todo.id }),
+           var items = todos[todoIndex].groceryItems,
+           let itemIndex = items.firstIndex(where: { $0.id == itemId }) {
+            items[itemIndex].isCompleted.toggle()
+            todos[todoIndex].groceryItems = items
+            saveTodos()
+        }
+    }
+    
+    func deleteGroceryItem(_ todo: TodoItem, itemId: UUID) {
+        if let todoIndex = todos.firstIndex(where: { $0.id == todo.id }),
+           var items = todos[todoIndex].groceryItems {
+            items.removeAll { $0.id == itemId }
+            todos[todoIndex].groceryItems = items
+            saveTodos()
+        }
+    }
+    
     func toggleComplete(_ todo: TodoItem) {
         if let index = todos.firstIndex(where: { $0.id == todo.id }) {
             todos[index].isCompleted.toggle()
