@@ -68,6 +68,34 @@ struct TodoInfoSheet: View {
                 } header: {
                     Text("Metadata")
                 }
+                
+                Section {
+                    if todo.history.isEmpty {
+                        Text("No history available")
+                            .foregroundColor(.secondary)
+                            .font(.system(size: 15))
+                    } else {
+                        ForEach(todo.history.reversed()) { historyItem in
+                            VStack(alignment: .leading, spacing: 4) {
+                                HStack {
+                                    Text(historyItem.action)
+                                        .font(.system(size: 15, weight: .medium))
+                                        .foregroundColor(.primary)
+                                    Spacer()
+                                    Text(historyItem.timestamp, style: .time)
+                                        .font(.system(size: 13))
+                                        .foregroundColor(.secondary)
+                                }
+                                Text(historyItem.timestamp, style: .date)
+                                    .font(.system(size: 13))
+                                    .foregroundColor(.secondary)
+                            }
+                            .padding(.vertical, 2)
+                        }
+                    }
+                } header: {
+                    Text("History")
+                }
             }
             .navigationTitle("Task Info")
             .navigationBarTitleDisplayMode(.inline)

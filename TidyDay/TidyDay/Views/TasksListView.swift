@@ -56,6 +56,13 @@ struct TasksListView: View {
                         .foregroundColor(.blue)
                 }
                 .padding(.top, 12)
+                .menuStyle(.borderlessButton)
+                .menuIndicator(.hidden)
+                .menuOrder(.automatic)
+                .onTapGesture {
+                    let impact = UIImpactFeedbackGenerator(style: .medium)
+                    impact.impactOccurred()
+                }
                 
                 inputCardView
             }

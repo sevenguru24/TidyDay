@@ -34,8 +34,16 @@ class TodoViewModel {
     
     func updateGroceryList(todo: TodoItem, title: String, groceryItems: [GroceryItem]) {
         if let index = todos.firstIndex(where: { $0.id == todo.id }) {
+            let oldTitle = todos[index].title
             todos[index].title = title
             todos[index].groceryItems = groceryItems
+            
+            // Add history entry if title changed
+            if oldTitle != title {
+                todos[index].addHistoryItem("Title updated from '\(oldTitle)' to '\(title)'")
+            }
+            todos[index].addHistoryItem("Grocery list updated")
+            
             saveTodos()
         }
     }
@@ -46,6 +54,7 @@ class TodoViewModel {
             let newItem = GroceryItem(name: itemName)
             items.append(newItem)
             todos[todoIndex].groceryItems = items
+            todos[todoIndex].addHistoryItem("Added item: \(itemName)")
             saveTodos()
         }
     }
@@ -54,17 +63,26 @@ class TodoViewModel {
         if let todoIndex = todos.firstIndex(where: { $0.id == todo.id }),
            var items = todos[todoIndex].groceryItems,
            let itemIndex = items.firstIndex(where: { $0.id == itemId }) {
+            let itemName = items[itemIndex].name
+            let wasCompleted = items[itemIndex].isCompleted
             items[itemIndex].isCompleted.toggle()
             todos[todoIndex].groceryItems = items
+            
+            let action = wasCompleted ? "Unchecked item: \(itemName)" : "Checked item: \(itemName)"
+            todos[todoIndex].addHistoryItem(action)
+            
             saveTodos()
         }
     }
     
     func deleteGroceryItem(_ todo: TodoItem, itemId: UUID) {
         if let todoIndex = todos.firstIndex(where: { $0.id == todo.id }),
-           var items = todos[todoIndex].groceryItems {
+           var items = todos[todoIndex].groceryItems,
+           let itemIndex = items.firstIndex(where: { $0.id == itemId }) {
+            let itemName = items[itemIndex].name
             items.removeAll { $0.id == itemId }
             todos[todoIndex].groceryItems = items
+            todos[todoIndex].addHistoryItem("Deleted item: \(itemName)")
             saveTodos()
         }
     }
@@ -78,7 +96,13 @@ class TodoViewModel {
     
     func toggleComplete(_ todo: TodoItem) {
         if let index = todos.firstIndex(where: { $0.id == todo.id }) {
+            let wasCompleted = todos[index].isCompleted
             todos[index].isCompleted.toggle()
+            
+            // Add history entry
+            let action = wasCompleted ? "Marked as pending" : "Marked as completed"
+            todos[index].addHistoryItem(action)
+            
             saveTodos()
         }
     }

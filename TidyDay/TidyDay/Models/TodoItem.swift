@@ -16,6 +16,7 @@ struct TodoItem: Identifiable, Codable {
     var dueTime: Date?
     var groceryItems: [GroceryItem]?
     var isArchived: Bool
+    var history: [TodoHistoryItem]
     var isGroceryList: Bool {
         groceryItems != nil
     }
@@ -29,6 +30,11 @@ struct TodoItem: Identifiable, Codable {
         self.dueTime = dueTime
         self.groceryItems = groceryItems
         self.isArchived = isArchived
+        self.history = [TodoHistoryItem(action: "Created", timestamp: createdAt)]
+    }
+    
+    mutating func addHistoryItem(_ action: String) {
+        history.append(TodoHistoryItem(action: action, timestamp: Date()))
     }
 }
 
@@ -41,5 +47,17 @@ struct GroceryItem: Identifiable, Codable {
         self.id = id
         self.name = name
         self.isCompleted = isCompleted
+    }
+}
+
+struct TodoHistoryItem: Identifiable, Codable {
+    let id: UUID
+    let action: String
+    let timestamp: Date
+    
+    init(id: UUID = UUID(), action: String, timestamp: Date) {
+        self.id = id
+        self.action = action
+        self.timestamp = timestamp
     }
 }
