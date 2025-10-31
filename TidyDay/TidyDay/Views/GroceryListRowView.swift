@@ -26,59 +26,69 @@ struct GroceryListRowView: View {
             ZStack {
                 // Background action buttons
                 HStack {
+                    // Left side - Complete action (swipe right)
+                    Button(action: {
+                        let impact = UIImpactFeedbackGenerator(style: .medium)
+                        impact.impactOccurred()
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                            viewModel.toggleTodo(todo)
+                        }
+                    }) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 22))
+                            .foregroundColor(.white)
+                    }
+                    .buttonStyle(.plain)
+                    .frame(width: 60, height: 60)
+                    .background(Color.green)
+                    .opacity(dragOffset.width > 50 ? 1 : 0)
+                    
                     Spacer()
                     
-                    // Left side actions
-                    HStack(spacing: 16) {
-                        Button(action: {
-                            let impact = UIImpactFeedbackGenerator(style: .medium)
-                            impact.impactOccurred()
-                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                                viewModel.toggleTodo(todo)
-                            }
-                        }) {
-                            Image(systemName: "checkmark.circle.fill")
-                                .font(.system(size: 24))
-                                .foregroundColor(.green)
-                        }
-                        .buttonStyle(.plain)
-                        
+                    // Right side actions (swipe left)
+                    HStack(spacing: 0) {
                         Button(action: onInfo) {
                             Image(systemName: "info.circle.fill")
-                                .font(.system(size: 24))
-                                .foregroundColor(.blue)
+                                .font(.system(size: 22))
+                                .foregroundColor(.white)
                         }
                         .buttonStyle(.plain)
+                        .frame(width: 60, height: 60)
+                        .background(Color.blue)
                         
                         Button(action: onEdit) {
                             Image(systemName: "pencil.circle.fill")
-                                .font(.system(size: 24))
-                                .foregroundColor(.orange)
+                                .font(.system(size: 22))
+                                .foregroundColor(.white)
                         }
                         .buttonStyle(.plain)
+                        .frame(width: 60, height: 60)
+                        .background(Color.orange)
                         
                         Button(action: onDelete) {
                             Image(systemName: "trash.circle.fill")
-                                .font(.system(size: 24))
-                                .foregroundColor(.red)
+                                .font(.system(size: 22))
+                                .foregroundColor(.white)
                         }
                         .buttonStyle(.plain)
+                        .frame(width: 60, height: 60)
+                        .background(Color.red)
                     }
-                    .padding(.trailing, 16)
                     .opacity(dragOffset.width < -50 ? 1 : 0)
                 }
                 
                 // Main content
-                HStack(spacing: 12) {
+                HStack(spacing: 16) {
                     Image(systemName: "cart.fill")
                         .font(.system(size: 20))
                         .foregroundColor(.green)
+                        .frame(width: 24, height: 24)
                     
                     VStack(alignment: .leading, spacing: 4) {
                         Text(todo.title)
-                            .font(.system(size: 17, weight: .medium))
-                            .foregroundColor(.primary)
-                            .strikethrough(todo.isCompleted)
+                            .font(.system(size: 17, weight: .regular))
+                            .foregroundColor(todo.isCompleted ? .secondary : .primary)
+                            .strikethrough(todo.isCompleted, color: .secondary)
                         
                         if let items = todo.groceryItems {
                             let completedCount = items.filter { $0.isCompleted }.count
@@ -103,11 +113,9 @@ struct GroceryListRowView: View {
                     }
                     .buttonStyle(.plain)
                 }
-                .padding()
-                .background(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .fill(.regularMaterial)
-                )
+                .padding(.vertical, 16)
+                .padding(.horizontal, 16)
+                .background(Color(UIColor.systemBackground))
                 .offset(x: dragOffset.width)
                 .gesture(
                     DragGesture()
@@ -117,8 +125,12 @@ struct GroceryListRowView: View {
                         .onEnded { value in
                             withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                                 if value.translation.width < -100 {
-                                    // Keep showing actions
-                                    dragOffset = CGSize(width: -120, height: 0)
+                                    // Show right side actions
+                                    dragOffset = CGSize(width: -180, height: 0)
+                                    isShowingActions = true
+                                } else if value.translation.width > 100 {
+                                    // Show left side complete action
+                                    dragOffset = CGSize(width: 60, height: 0)
                                     isShowingActions = true
                                 } else {
                                     // Snap back
@@ -146,15 +158,15 @@ struct GroceryListRowView: View {
             
             // Expanded grocery items
             if isExpanded {
-                VStack(spacing: 8) {
+                VStack(spacing: 12) {
                     // Add new item input
                     HStack(spacing: 12) {
                         Image(systemName: "plus.circle.fill")
-                            .font(.system(size: 16))
+                            .font(.system(size: 18))
                             .foregroundColor(.blue)
                         
                         TextField("Add item...", text: $newItemText)
-                            .font(.system(size: 15, weight: .regular))
+                            .font(.system(size: 16, weight: .regular))
                             .foregroundColor(.primary)
                             .focused($isInputFocused)
                             .submitLabel(.done)
@@ -165,7 +177,7 @@ struct GroceryListRowView: View {
                         if !newItemText.isEmpty {
                             Button(action: addNewItem) {
                                 Image(systemName: "arrow.up.circle.fill")
-                                    .font(.system(size: 16))
+                                    .font(.system(size: 18))
                                     .foregroundColor(.blue)
                             }
                             .buttonStyle(.plain)
@@ -173,18 +185,14 @@ struct GroceryListRowView: View {
                         }
                     }
                     .padding(.horizontal, 16)
-                    .padding(.vertical, 10)
-                    .background(
-                        RoundedRectangle(cornerRadius: 10, style: .continuous)
-                            .fill(.thickMaterial)
-                            .shadow(color: Color.black.opacity(0.05), radius: 2, x: 0, y: 1)
-                    )
-                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    .padding(.vertical, 12)
+                    .background(Color(UIColor.secondarySystemBackground))
+                    .cornerRadius(10)
                     
                     // Existing grocery items
                     if let items = todo.groceryItems {
                         ForEach(items) { item in
-                            HStack(spacing: 12) {
+                            HStack(spacing: 16) {
                                 Button(action: {
                                     let impact = UIImpactFeedbackGenerator(style: .light)
                                     impact.impactOccurred()
@@ -195,14 +203,13 @@ struct GroceryListRowView: View {
                                 }) {
                                     ZStack {
                                         Circle()
-                                            .stroke(Color.blue, lineWidth: 2)
+                                            .stroke(item.isCompleted ? Color.clear : Color.secondary.opacity(0.3), lineWidth: 2)
                                             .frame(width: 20, height: 20)
                                         
                                         if item.isCompleted {
                                             Circle()
                                                 .fill(Color.blue)
                                                 .frame(width: 20, height: 20)
-                                                .scaleEffect(item.isCompleted ? 1.0 : 0.0)
                                             
                                             Image(systemName: "checkmark")
                                                 .font(.system(size: 10, weight: .bold))
@@ -213,7 +220,7 @@ struct GroceryListRowView: View {
                                 .buttonStyle(.plain)
                                 
                                 Text(item.name)
-                                    .font(.system(size: 15, weight: .regular))
+                                    .font(.system(size: 16, weight: .regular))
                                     .foregroundColor(item.isCompleted ? .secondary : .primary)
                                     .strikethrough(item.isCompleted)
                                 
@@ -228,41 +235,27 @@ struct GroceryListRowView: View {
                                     }
                                 }) {
                                     Image(systemName: "trash.fill")
-                                        .font(.system(size: 12))
+                                        .font(.system(size: 14))
                                         .foregroundColor(.red)
                                 }
                                 .buttonStyle(.plain)
                             }
                             .padding(.horizontal, 16)
                             .padding(.vertical, 12)
-                            .background(
-                                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                    .fill(.regularMaterial)
-                                    .shadow(color: Color.black.opacity(0.08), radius: 4, x: 0, y: 1)
-                            )
-                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                            .background(Color(UIColor.secondarySystemBackground))
+                            .cornerRadius(10)
                         }
                     }
                 }
                 .padding(.horizontal, 16)
                 .padding(.top, 8)
                 .padding(.bottom, 12)
-                .clipped()
-                .transition(.opacity.combined(with: .slide))
+                .transition(.opacity)
             }
         }
-        .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(.regularMaterial)
-                .shadow(color: Color.black.opacity(0.1), radius: 8, x: 0, y: 2)
-                .overlay {
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .strokeBorder(
-                            Color.primary.opacity(0.08),
-                            lineWidth: 0.5
-                        )
-                }
-        )
+        .background(Color(UIColor.systemBackground))
+        .cornerRadius(16)
+        .shadow(color: Color.black.opacity(0.08), radius: 8, x: 0, y: 2)
         .opacity(todo.isCompleted ? 0.6 : 1.0)
     }
     
